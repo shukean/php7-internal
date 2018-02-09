@@ -135,9 +135,7 @@ typedef struct _sapi_globals_struct {
 
 5. sapi\_module->startup(), 在CLI中, 执行的为 php\_cli\_startup 函数. 而php\_cli\_startup 直接调用的php内核函数 php\_module\_startup. 
 初始化 SG(sapi\_headers) 成员, 然后调用sapi\_moudle的 activate 函数和 input\_filter\_init 函数. (如果被定义, 而cli并没有实现这两个函数)  
-
 php\_output\_startup 初始化了php输出缓冲的全局变量, 宏OG(v) 用来简化取值.  
-
 ``` 
 ZEND_BEGIN_MODULE_GLOBALS(output)
 	zend_stack handlers;
@@ -149,66 +147,71 @@ ZEND_BEGIN_MODULE_GLOBALS(output)
 ZEND_END_MODULE_GLOBALS(output)
  ```
 
+5. 接上...
 指定php\_output\_direct(函数指针) 为php\_output\_stdout, 即向终端stdout输出.  
-
 php\_startup\_ticks 初始化了PG(tick\_functions)变量, 宏PG(v)是对php\_core\_globals `core\_globals` 全局变量的取值, 定义在 main/php_globals.h 中, 从取名上就可以看, 这是PHP一个很核心的全局变量. 一些对PHP的状态设置等全部包含这里.  
-
 gc\_globals\_ctor 初始化GC的全局变量 gc_globals.  
-
 设置zend\_startup函数需要的参数 zend\_utility\_functions, 一个工具集的结构体, 包含错误回调, 输出格式化等函数的变量.  
-zend_startup 函数:
-  * start_memory_manager 初始换内存变量 alloc_globals    
-  * virtual_cwd_startup 初始化虚机路径变量 cwd_globals  
-  * zend_startup_extensions_mechanism 初始化了 zend_extensions 列表  
-  * 给zend中的一些全局变量函数指针赋值, 如 zend_error_cb, zend_write 等.  
-  * zend_init_opcodes_handlers 初始化了opcode对应的句柄函数  
-  * 初始化了CG(function_table), CG(class_table), CG(auto_globals), EG(zend_constants) 4个hash变量. 宏CG(v)是对zend_compiler_globals compiler_globals的取值, 宏EG(v)是对zend_executor_globals executor_globals 的取值.  
-  * 初始化了 module_registry hash变量  
-  * zend_init_rsrc_list_dtors 函数初始化了 list_destructors hash变量  
-  * ini_scanner_globals_ctor 函数中 memset 变量 ini_scanner_globals  
-  * php_scanner_globals_ctor 函数中 memset 变量 language_scanner_globals
-  * zend_set_default_compile_time_values 指定了 CG(short_tags) = 1, CG(compiler_options) = 1<<1  
-  * EG(error_reporting) = E_ALL & ~E_NOTICE;  
-  * zend_interned_strings_init 函数初始化了 interned string  
-  * zend_startup_builtin_functions 函数设置了 EG(current_module)  
-  * zend_register_standard_constants 函数设置了一些PHP用到的常量, 如报错级别: E_ERROR, TRUE, FALSE, NULL等, 保存在 EG(zend_constants) 中.  
-  * 注册GLOBALS变量到 CG(auto_globals) 中.  
-  * zend_ini_startup 初始化 EG(ini_directives) 变量 (hashtable)  
+**zend_startup 函数:**
+ > * start_memory_manager 初始换内存变量 alloc_globals    
+ > * virtual_cwd_startup 初始化虚机路径变量 cwd_globals  
+ > * zend_startup_extensions_mechanism 初始化了 zend_extensions 列表  
+ > * 给zend中的一些全局变量函数指针赋值, 如 zend_error_cb, zend_write 等.  
+ > * zend_init_opcodes_handlers 初始化了opcode对应的句柄函数  
+ > * 初始化了CG(function_table), CG(class_table), CG(auto_globals), EG(zend_constants) 4个hash变量. 宏CG(v)是对zend_compiler_globals compiler_globals的取值, 宏EG(v)是对zend_executor_globals executor_globals 的取值.  
+ > * 初始化了 module_registry hash变量  
+ > * zend_init_rsrc_list_dtors 函数初始化了 list_destructors hash变量  
+ > * ini_scanner_globals_ctor 函数中 memset 变量 ini_scanner_globals  
+ > * php_scanner_globals_ctor 函数中 memset 变量 language_scanner_globals
+ > * zend_set_default_compile_time_values 指定了 CG(short_tags) = 1, CG(compiler_options) = 1<<1  
+ > * EG(error_reporting) = E_ALL & ~E_NOTICE;  
+ > * zend_interned_strings_init 函数初始化了 interned string  
+ > * zend_startup_builtin_functions 函数设置了 EG(current_module)  
+ > * zend_register_standard_constants 函数设置了一些PHP用到的常量, 如报错级别: E_ERROR, TRUE, FALSE, NULL等, 保存在 EG(zend_constants) 中.  
+ > * 注册GLOBALS变量到 CG(auto_globals) 中.  
+ > * zend_ini_startup 初始化 EG(ini_directives) 变量 (hashtable)  
 
-6. setlocale, tzset  
-7. 注册PHP相关系统常量, 如: PHP的版本, OS, INI相关  
-8. 注册output相关的常量, 如: PHP_OUTPUT_HANDLER_START 等  
-9. 注册rfc1867,上传相关的常量, 如: UPLOAD_ERR_OK, UPLOAD_ERR_FORM_SIZE 等  
+5. 接上... 
+setlocale, tzset  
+注册PHP相关系统常量, 如: PHP的版本, OS, INI相关  
+注册output相关的常量, 如: PHP_OUTPUT_HANDLER_START 等  
+注册rfc1867,上传相关的常量, 如: UPLOAD_ERR_OK, UPLOAD_ERR_FORM_SIZE 等  
+php_init_config 函数 (TODO)  
+php_startup_auto_globals 注册\_GET, \_POST, \_COOKIE, \_SERVER, \_ENV, \_REQUEST, \_FILES等变量到 CG(auto_globals) 中. 同时设置其回调函数, 如: php_auto_globals_create_get, php_auto_globals_create_post, php_auto_globals_create_cookie, php_auto_globals_create_server, php_auto_globals_create_env, php_auto_globals_create_request, php_auto_globals_create_files  
+zend_set_utility_values (TODO)  
+php_startup_sapi_content_types 函数, 设置 sapi_module的 default_post_reader, treat_data, input_filter, input_filter_init 的默认指向函数  
+php_register_internal_extensions_func 函数, 注册内置模块, basic, bcmath(编译指定), canendar, ftp, mbstring(编译指定), pcre, session; 变量module_registry保存注册的模块, 如果这些模块有函数列表 (functions), 那么将其函数列表加入到 CG(function_table) 中.  
+php_ini_register_extensions 函数, 加载php.ini 中指定的 zend扩展 (zend_extensions) 和 php扩展 (module_registry)  
+zend_startup_modules 函数, 将 module_registry 中的扩展依次执行zend_startup_module_ex: 如果模块指定了globals_ctor, 则先执行 globals_ctor 函数; 如果模块指定了module_startup_func, 则执行 module_startup_func 函数  
+zend_startup_extensions 函数, 将 zend_extensions 中的扩展依次执行 zend_extension_startup: 如果扩展指定了startup, 则执行 startup 函数  
+zend_collect_module_handlers 函数, 将 module_registry 中的模块分析处理, 实现了那些接口等分类计数  
+如果sapi 定义了 additional_functions 函数列表, 则将这些函数注册到 CG(function_table) 中.  
+php_disable_functions 函数, 将php.ini 文件中指定的不可用函数, PG(disable_functions), 标记为 display_disabled_function, 修改func的handler 句柄  
+php_disable_classes 函数, 将php.ini 文件中指定的不可用类, PG(disable_classes), 标记为 display_disabled_class. 修改 class 的 create_object 句柄.  
+zend_post_startup (TODO)  
+sapi_deactivate 函数, 释放SG的成员占用的空间  
+shutdown_memory_manager  
 
-10. php_init_config 函数 (TODO)  
+6. do_cli 函数, 开始执行php代码的入口  
+解析命令行传入的参数, 执行对应的逻辑. 如 获取php代码文件等  
+**`php_request_startup` 函数**  
+> * zend_activate() 函数中将 gc, compiler, executor, scanner的初始化  
+> * sapi_activate() 函数, 见上文  
+> * zend_signal_activate() 函数, 注册信号的回调函数 zend_signal_handler_defer  
+> * zend_set_timeout 函数, 设置超时时间, zend_timeout_handler 为超时回调函数  
+> * php_hash_environment() 函数, 初始化 PG(http_globals) 变量, 调用 zend_activate_auto_globals 函数遍历 CG(auto_globals) 变量中的成员, 执行其对应的回调函数. 如 \$\_GET, \$\_POST的获取; php_build_argv 函数, 注册argv argc 变量  
+> * zend_activate_modules() 函数, 将 module_registry 中实现了 startup 接口的模块依次执行其 request_startup_func 函数  
 
-11. php_startup_auto_globals 注册\_GET, \_POST, \_COOKIE, \_SERVER, \_ENV, \_REQUEST, \_FILES等变量到 CG(auto_globals) 中.  
+6. 接上...  
+zend_is_auto_global_str() 函数, 执行 auto_globals 中 \_SERVER 对应的回调函数 `php_auto_globals_create_server`, 向 \$\_SERVER 数组中填充数据, 如 REQUEST\_TIME, REQUEST\_TIME\_FLOAT 等.  
+根据命令行的参数, 设置behavior的模式, 如 PHP_MODE_STANDARD, PHP_MODE_CLI_DIRECT, PHP_MODE_LINT, PHP_MODE_PROCESS_STDIN 等, 更多见 (php_cli.c 文件的定义 PHP\_MODE\_\*)  
+根据behavior的值, 决定运行模式, 如 PHP_MODE_LINT 模式, 就是执行 php_lint_script() 函数, 分析php代码是否有语法错误. PHP_MODE_STANDARD 模式, 就是执行 php_execute_script 函数, 执行php代码.  
+php_request_shutdown() 函数, 清除tick任务, 检查内存泄漏, 执行注册的shutdown函数, 执行类的析构函数, flush 输出,  执行模块的`request_shutdown_func`函数, 释放globals变量, zend内核清理, sapi清理, 其他清理  
 
-12. zend_set_utility_values (TODO)  
+7. php_module_shutdown() 函数, 执行sapi的flush函数; zend_shutdown: 清理常驻list资源, functions, class, 模块清理等; ini清理; output清理;  
 
-13. php_startup_sapi_content_types 函数, 设置 sapi_module的 default_post_reader, treat_data, input_filter, input_filter_init 的默认指向函数  
+8. sapi_shutdown() 函数. sapi的清理  
 
-13. php_register_internal_extensions_func 函数, 注册内置模块, basic, bcmath(编译指定), canendar, ftp, mbstring(编译指定), pcre, session; 变量module_registry保存注册的模块, 如果这些模块有函数列表 (functions), 那么将其函数列表加入到 CG(function_table) 中.  
-
-14. php_ini_register_extensions 函数, 加载php.ini 中指定的 zend扩展 (zend_extensions) 和 php扩展 (module_registry)  
-
-15. zend_startup_modules 函数, 将 module_registry 中的扩展依次执行zend_startup_module_ex:  
-* 如果模块指定了globals_ctor, 则先执行 globals_ctor 函数  
-* 如果模块指定了module_startup_func, 则执行 module_startup_func 函数  
-
-16. zend_startup_extensions 函数, 将 zend_extensions 中的扩展依次执行 zend_extension_startup:  
-* 如果扩展指定了startup, 则执行 startup 函数  
-
-17. 如果sapi 定义了 additional_functions 函数列表, 则将这些函数注册到 CG(function_table) 中.  
-
-18. php_disable_functions 函数, 将php.ini 文件中指定的不可用函数, PG(disable_functions), 标记为 display_disabled_function, 修改func的handler 句柄  
-
-19. php_disable_classes 函数, 将php.ini 文件中指定的不可用类, PG(disable_classes), 标记为 display_disabled_class. 修改 class 的 create_object 句柄.  
-
-
-
-
-
-
+9. 结束  
 
 
